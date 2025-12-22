@@ -1,0 +1,384 @@
+
+import tkinter as tk #to create gui
+from tkinter import messagebox, simpledialog #to ask the user for quantity
+from PIL import Image, ImageTk 
+import datetime
+import os
+
+#  IMAGE PATHS AND ORDER FILE
+HOME_IMAGE_PATH = r"C:\Users\Administrator\Documents\HOMEPAGE.jpg"
+BACKGROUND_IMAGE_PATH = r"C:\Users\Administrator\Downloads\background.jpg"
+ORDERS_FILE = "orders.txt"
+
+
+
+class OrganicSupermarketApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Organic Supermarket")
+        self.root.state("zoomed")            # Fullscreen window
+        self.root.configure(bg="white")
+
+        self.cart = {}                       # Stores items added to cart
+        self.order_number = self.get_last_order_number()  # Load last order number
+
+        # Inventory with prices
+        self.inventory = {
+            "Organic Apples": 120, "Bananas": 80, "Honey": 350, "Almond Milk": 280,
+            "Brown Bread": 150, "Olive Oil": 550, "Organic Rice": 400,
+            "Natural Soap": 200, "Green Tea": 300, "Organic Eggs": 250,
+            "Tomatoes": 90, "Potatoes": 60, "Onions": 70, "Carrots": 100,
+            "Cucumber": 110, "Lemon": 50, "Garlic": 120, "Ginger": 130,
+            "Broccoli": 200, "Spinach": 150, "Whole Wheat Flour": 220,
+            "Sugar": 150, "Salt": 100, "Butter": 200, "Cheese": 270,
+            "Yogurt": 180, "Milk": 160, "Oats": 240, "Pasta": 230,
+            "Coconut Water": 260, "Eggs": 250, "Herbal Shampoo": 320,
+            "Aloe Vera Gel": 280, "Rose Water": 230, "Face Cream": 420,
+            "Lip Balm": 180, "Body Lotion": 350, "Hair Oil": 300,
+            "Shower Gel": 240, "Toothpaste": 150, "Shampoo": 260,
+            "Conditioner": 280, "Deodorant": 200, "Sunscreen": 450,
+            "Serum": 500, "Toner": 350, "Rice Flour": 180, "Chips": 180,
+            "Biscuits": 160, "Juice": 200, "Jam": 190, "Ketchup": 170,
+            "Tea Leaves": 220, "Coffee Beans": 450, "Coconut Oil": 320,
+            "Brown Sugar": 230, "Herbal Face Wash": 270, "Organic Shampoo": 350,
+            "Granola": 260, "Dry Fruits Mix": 400, "Mint Leaves": 100,
+            "Basil Seeds": 120
+        }
+
+
+        # Set stock of each item to 20
+        self.stock = {item: 20 for item in self.inventory}
+
+        self.show_home_page()
+
+    #  READ LAST ORDER NUMBER FROM FILE
+    def get_last_order_number(self):
+        if not os.path.exists(ORDERS_FILE):
+            return 1000   # Start from 1000 if file doesn't exist
+
+        try:
+            with open(ORDERS_FILE, "r", encoding="utf-8") as f:
+                for line in reversed(f.readlines()):
+                    # Find last written order number
+                    if line.startswith("Order Number:"):
+                        return int(line.split(":")[1].strip())
+        except:
+            return 1000
+
+        return 1000
+
+    #  LOAD AND RESIZE IMAGE
+    def load_image(self, path):
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        img = Image.open(path)
+        img = img.resize((screen_width, screen_height))  # Fullscreen background
+        return ImageTk.PhotoImage(img)
+
+    #  REMOVE ALL WIDGETS FROM WINDOW
+    def clear_window(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+    #  HOME PAGE (INITIAL)
+    def show_home_page(self):
+        self.clear_window()
+        bg = self.load_image(HOME_IMAGE_PATH)
+
+        lbl = tk.Label(self.root, image=bg)
+        lbl.image = bg            # Prevent garbage-collection
+        lbl.place(x=0, y=0)
+
+        # After 3 seconds go to welcome page
+        self.root.after(3000, self.show_welcome_page)
+
+    #  WELCOME PAGE
+    def show_welcome_page(self):
+        self.clear_window()
+        bg = self.load_image(BACKGROUND_IMAGE_PATH)
+
+        lbl = tk.Label(self.root, image=bg)
+        lbl.image = bg
+        lbl.place(x=0, y=0)
+
+        tk.Label(self.root, text="Welcome to Organic Supermarket",
+                 font=("Arial", 38, "bold"), bg="#e8fff0",
+                 fg="#004d00").pack(pady=60)
+
+        desc = (
+            "Welcome to your trusted destination for 100% organic and natural products.\n"
+            "We bring you fresh groceries, skincare, and wellness items directly from local farms.\n"
+            "Enjoy chemical-free, sustainable products that make your life healthy and happy.\n"
+            "Eat clean. Live green. Shop organic with confidence!"
+        )
+        tk.Label(self.root, text=desc, font=("Arial", 18), bg="#e8ffe8",
+                 fg="#003300", justify="center").pack(pady=20)
+
+        btn_frame = tk.Frame(self.root, bg="#e8ffe8")
+        btn_frame.pack(pady=40)
+
+        tk.Button(btn_frame, text="Start Shopping", font=("Arial", 20, "bold"),
+                  bg="green", fg="white", padx=40, pady=10,
+                  command=self.show_shop_page).grid(row=0, column=0, padx=50)
+
+        tk.Button(btn_frame, text="Management System", font=("Arial", 20, "bold"),
+                  bg="darkgreen", fg="white", padx=40, pady=10,
+                  command=self.show_management_system).grid(row=0, column=1, padx=50)
+
+    #  SHOP PAGE (SHOW ALL PRODUCTS)
+    def show_shop_page(self):
+        self.clear_window()
+        bg = self.load_image(BACKGROUND_IMAGE_PATH)
+
+        lbl = tk.Label(self.root, image=bg)
+        lbl.image = bg
+        lbl.place(x=0, y=0)
+
+        tk.Label(self.root, text="Organic Products", font=("Arial", 34, "bold"),
+                 bg="#e8ffe8", fg="#004d00").pack(pady=20)
+
+        canvas = tk.Canvas(self.root, bg="#e8ffe8", highlightthickness=0)
+        scrollbar = tk.Scrollbar(self.root, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas, bg="#e8ffe8")
+
+        scroll_frame.bind("<Configure>",
+                          lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        columns = 5
+        row = col = 0
+
+        for item, price in self.inventory.items():
+
+            frame = tk.Frame(scroll_frame, bg="#ccffcc", bd=3, relief="ridge")
+            frame.grid(row=row, column=col, padx=15, pady=15)
+
+            tk.Label(frame, text=item, font=("Arial", 13, "bold"),
+                     bg="#ccffcc", width=18).pack(padx=5, pady=5)
+
+            tk.Label(frame, text=f"Rs {price}", font=("Arial", 12),
+                     bg="#ccffcc", fg="green").pack()
+
+            btn_state = tk.NORMAL if self.stock[item] > 0 else tk.DISABLED
+
+            tk.Button(frame, text="Add to Cart", font=("Arial", 10, "bold"),
+                      bg="#006600", fg="white", state=btn_state,
+                      command=lambda i=item: self.add_to_cart(i)).pack(pady=5)
+
+            col += 1
+            if col >= columns:
+                col = 0
+                row += 1
+
+        tk.Button(self.root, text="View Cart", font=("Arial", 18, "bold"),
+                  bg="green", fg="white",
+                  command=self.show_cart_page).pack(pady=20)
+
+    #  ADD ITEM TO CART
+    def add_to_cart(self, item):
+
+        if self.stock[item] <= 0:
+            messagebox.showwarning("Out of Stock", f"{item} is out of stock!")
+            return
+
+        self.cart[item] = self.cart.get(item, 0) + 1
+        self.stock[item] -= 1
+
+        messagebox.showinfo("Added", f"1 × {item} added to cart!")
+
+    #  CART PAGE
+    def show_cart_page(self):
+        self.clear_window()
+        bg = self.load_image(BACKGROUND_IMAGE_PATH)
+
+        lbl = tk.Label(self.root, image=bg)
+        lbl.image = bg
+        lbl.place(x=0, y=0)
+
+        tk.Label(self.root, text="Your Cart", font=("Arial", 30, "bold"),
+                 bg="#e8ffe8").pack(pady=20)
+
+        if not self.cart:
+            tk.Label(self.root, text="Your cart is empty!", font=("Arial", 16),
+                     bg="#e8ffe8").pack(pady=10)
+            return
+
+        total = 0
+        cart_frame = tk.Frame(self.root, bg="#e8ffe8")
+        cart_frame.pack(pady=10)
+
+        for item, qty in list(self.cart.items()):
+            frame = tk.Frame(cart_frame, bg="#ccffcc", bd=2, relief="ridge")
+            frame.pack(padx=10, pady=5, fill="x")
+
+            price = self.inventory[item]
+            subtotal = price * qty
+            total += subtotal
+
+            tk.Label(frame, text=f"{item}", font=("Arial", 14, "bold"),
+                     bg="#ccffcc").pack(side="left", padx=10)
+
+            tk.Label(frame, text=f"Subtotal: Rs {subtotal}", font=("Arial", 12),
+                     bg="#ccffcc").pack(side="left", padx=10)
+
+            def decrease(i=item):
+                if self.cart[i] > 1:
+                    self.cart[i] -= 1
+                    self.stock[i] += 1
+                else:
+                    self.stock[i] += 1
+                    del self.cart[i]
+                self.show_cart_page()
+
+            def increase(i=item):
+                if self.stock[i] > 0:
+                    self.cart[i] += 1
+                    self.stock[i] -= 1
+                self.show_cart_page()
+
+            tk.Button(frame, text="-", command=decrease, width=3,
+                      bg="#ff6666").pack(side="right", padx=5)
+
+            tk.Button(frame, text="+", command=increase, width=3,
+                      bg="#66ff66").pack(side="right", padx=5)
+
+        tk.Label(self.root, text=f"Total: Rs {total}",
+                 font=("Arial", 20, "bold"), bg="#e8ffe8", fg="green").pack(pady=20)
+
+        tk.Button(self.root, text="Proceed to Checkout", font=("Arial", 18, "bold"),
+                  bg="green", fg="white",
+                  command=self.show_checkout_page).pack(pady=15)
+
+    #  CHECKOUT PAGE
+    def show_checkout_page(self):
+        self.clear_window()
+        bg = self.load_image(BACKGROUND_IMAGE_PATH)
+
+        lbl = tk.Label(self.root, image=bg)
+        lbl.image = bg
+        lbl.place(x=0, y=0)
+
+        tk.Label(self.root, text="Checkout", font=("Arial", 32, "bold"),
+                 bg="#e8ffe8", fg="#004d00").pack(pady=30)
+
+        fields = [("Customer Name:", "name"),
+                  ("Email:", "email"),
+                  ("Address:", "address")]
+
+        entries = {}
+
+        for label, key in fields:
+            tk.Label(self.root, text=label, font=("Arial", 16),
+                     bg="#e8ffe8").pack()
+            entry = tk.Entry(self.root, font=("Arial", 16), width=40)
+            entry.pack(pady=5)
+            entries[key] = entry
+
+        tk.Label(self.root, text="Payment Method:", font=("Arial", 16),
+                 bg="#e8ffe8").pack(pady=5)
+
+        payment_var = tk.StringVar(value="Cash")
+
+        for method in ["Cash", "Card", "Online"]:
+            tk.Radiobutton(self.root, text=method, variable=payment_var, value=method,
+                           font=("Arial", 14), bg="#e8ffe8").pack(anchor="w", padx=200)
+
+        tk.Button(self.root, text="Place Order", font=("Arial", 18, "bold"),
+                  bg="green", fg="white",
+                  command=lambda: self.finish_order(entries["name"].get(),
+                                                    entries["email"].get(),
+                                                    entries["address"].get(),
+                                                    payment_var.get())).pack(pady=20)
+
+    #  STORE ORDER IN FILE
+    def finish_order(self, name, email, address, payment_method):
+
+        if not name or not email or not address:
+            messagebox.showerror("Error", "Please fill all fields!")
+            return
+
+        self.order_number += 1
+        date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        products = ", ".join([f"{i} x {q}" for i, q in self.cart.items()])
+
+        with open(ORDERS_FILE, "a", encoding="utf-8") as f:
+            f.write(f"Name: {name}\n")
+            f.write(f"Email: {email}\n")
+            f.write(f"Address: {address}\n")
+            f.write(f"Products: {products}\n")
+            f.write(f"Payment Method: {payment_method}\n")
+            f.write(f"Order Number: {self.order_number}\n")
+            f.write(f"Date & Time: {date_time}\n")
+            f.write("-" * 50 + "\n")
+
+        self.cart.clear()
+        self.show_thankyou_page(self.order_number)
+
+    #  THANK YOU PAGE
+    def show_thankyou_page(self, order_no):
+        self.clear_window()
+
+        tk.Label(self.root, text="Thank You for Shopping!",
+                 font=("Arial", 36, "bold"), bg="#e8ffe8",
+                 fg="#004d00").pack(pady=250)
+
+        tk.Label(self.root, text=f"Your Order Number: {order_no}",
+                 font=("Arial", 18, "bold"),
+                 bg="#e8ffe8").pack(pady=10)
+
+        tk.Button(self.root, text="Back to Home", font=("Arial", 18, "bold"),
+                  bg="green", fg="white",
+                  command=self.show_home_page).pack(pady=30)
+
+    #  MANAGEMENT SYSTEM
+    def show_management_system(self):
+        self.clear_window()
+        bg = self.load_image(BACKGROUND_IMAGE_PATH)
+
+        lbl = tk.Label(self.root, image=bg)
+        lbl.image = bg
+        lbl.place(x=0, y=0)
+
+        tk.Label(self.root, text="Orders Management System",
+                 font=("Arial", 26, "bold"), bg="#e8ffe8",
+                 fg="#004d00").pack(pady=20)
+
+        if not os.path.exists(ORDERS_FILE) or os.path.getsize(ORDERS_FILE) == 0:
+            tk.Label(self.root, text="No orders have been placed yet.",
+                     font=("Arial", 14), bg="#e8ffe8").pack(pady=10)
+            return
+
+        canvas = tk.Canvas(self.root, bg="#e8ffe8", highlightthickness=0)
+        scrollbar = tk.Scrollbar(self.root, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas, bg="#e8ffe8")
+
+        scroll_frame.bind("<Configure>",
+                          lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        with open(ORDERS_FILE, "r", encoding="utf-8") as f:
+            orders_data = f.read().strip().split("-" * 50)
+            for order in orders_data:
+                if order.strip():
+                    tk.Label(scroll_frame, text=order.strip(),
+                             font=("Arial", 12), bg="#e8ffe8",
+                             justify="left", anchor="w").pack(pady=5, padx=15, fill="x")
+
+        tk.Button(self.root, text="⬅ Back to Home", font=("Arial", 14, "bold"),
+                  bg="green", fg="white",
+                  command=self.show_home_page).pack(pady=20)
+
+
+
+# RUN APPLICATION
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = OrganicSupermarketApp(root)
+    root.mainloop()
